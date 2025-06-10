@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\CategoryResource\Pages;
-use App\Filament\Resources\CategoryResource\RelationManagers;
-use App\Models\Category;
+use App\Filament\Resources\MerekResource\Pages;
+use App\Filament\Resources\MerekResource\RelationManagers;
+use App\Models\Merek;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,12 +13,12 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class CategoryResource extends Resource
+class MerekResource extends Resource
 {
-    protected static ?string $model = Category::class;
+    protected static ?string $model = Merek::class;
 
-    protected static ?string $navigationIcon = 'heroicon-m-folder-open';
-    protected static ?string $navigationLabel = 'Kategori';
+    protected static ?string $navigationIcon = 'heroicon-c-tag';
+    protected static ?string $navigationLabel = 'Merek';
     protected static ?string $navigationGroup = 'Master';
 
 
@@ -36,7 +36,7 @@ class CategoryResource extends Resource
                     ->label('Deskripsi')
                     ->columnSpanFull(),
             ]);
-        }
+    }
 
     public static function table(Table $table): Table
     {
@@ -69,7 +69,7 @@ class CategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManageCategories::route('/'),
+            'index' => Pages\ManageMereks::route('/'),
         ];
     }
 }

@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\CategoryResource\Pages;
-use App\Filament\Resources\CategoryResource\RelationManagers;
-use App\Models\Category;
+use App\Filament\Resources\SatuanResource\Pages;
+use App\Filament\Resources\SatuanResource\RelationManagers;
+use App\Models\Satuan;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,21 +13,20 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class CategoryResource extends Resource
+class SatuanResource extends Resource
 {
-    protected static ?string $model = Category::class;
+    protected static ?string $model = Satuan::class;
 
-    protected static ?string $navigationIcon = 'heroicon-m-folder-open';
-    protected static ?string $navigationLabel = 'Kategori';
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationLabel = 'Satuan';
     protected static ?string $navigationGroup = 'Master';
-
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\TextInput::make('name')
-                    ->label('Nama Kategori')
+                    ->label('Nama Satuan')
                     ->required()
                     ->maxLength(255)
                     ->columnSpanFull(),
@@ -35,8 +34,13 @@ class CategoryResource extends Resource
                 Forms\Components\Textarea::make('description')
                     ->label('Deskripsi')
                     ->columnSpanFull(),
+                Forms\Components\TextInput::make('symbol')
+                    ->label('Simbol')
+                    ->required()
+                    ->maxLength(50)
+                    ->columnSpanFull(),
             ]);
-        }
+    }
 
     public static function table(Table $table): Table
     {
@@ -51,6 +55,9 @@ class CategoryResource extends Resource
                     ->label('Deskripsi')
                     ->limit(50)
                     ->sortable(),
+                Tables\Columns\TextColumn::make('symbol')
+                    ->label('Simbol')
+                    ->toggleable(),
             ])
             ->filters([
                 //
@@ -69,7 +76,7 @@ class CategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManageCategories::route('/'),
+            'index' => Pages\ManageSatuans::route('/'),
         ];
     }
 }
