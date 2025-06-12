@@ -35,7 +35,7 @@ class ProductResource extends Resource implements HasShieldPermissions
                     TextInput::make('name')
                         ->required()
                         ->maxLength(50)
-                        ->live()
+                        ->lazy()
                         ->afterStateUpdated(fn ($state, callable $set) => $set('slug', \Str::slug($state))),
 
                     TextInput::make('sku')
@@ -118,9 +118,9 @@ class ProductResource extends Resource implements HasShieldPermissions
                     FileUpload::make('image')
                         ->label('Gambar')
                         ->image()
+                        ->nullable()
                         ->disk('public')
                         ->directory('products')
-                        ->required()
                         ->columnSpanFull(),
                 ]),
             ]);

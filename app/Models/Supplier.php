@@ -12,4 +12,13 @@ class Supplier extends Model
         'no_tlp',
         'alamat',
     ];
+
+    public function pembelians()
+    {
+        return $this->hasMany(Pembelian::class);
+    }
+    public function pembelianDetails()
+    {
+        return $this->hasManyThrough(Pembelian_Detail::class, Pembelian::class);
+    }
 }
