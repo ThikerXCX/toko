@@ -61,14 +61,21 @@ class PembelianResource extends Resource implements HasShieldPermissions
                         ->searchable()
                         ->label('Produk')
                         ->reactive()
-                        ->afterStateUpdated(function ($state, callable $set) {
+                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
                             if ($state) {
                                 $hargaBeli = \App\Models\Product::find($state)?->harga_beli ?? 0;
-                                $set('harga', $hargaBeli);
-                                // Optional: reset subtotal juga
                                 $qty = 1;
+                                $set('harga', $hargaBeli);
                                 $set('qty', $qty);
                                 $set('subtotal', $hargaBeli * $qty);
+
+                                // Ambil details lama
+                                $details = $get('details') ?? [];
+                                // Hitung total dari details lama
+                                $total = collect($details)->sum(fn ($item) => ($item['harga'] ?? 0) * ($item['qty'] ?? 0));
+                                // Tambahkan subtotal dari item yang baru dipilih (karena belum masuk ke details)
+                                $total += $hargaBeli * $qty;
+                                $set('total', $total);
                             }
                         }),
 
