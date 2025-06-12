@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\MerekResource\Pages;
 use App\Filament\Resources\MerekResource\RelationManagers;
 use App\Models\Merek;
+use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,7 +14,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class MerekResource extends Resource
+class MerekResource extends Resource implements HasShieldPermissions
 {
     protected static ?string $model = Merek::class;
 
@@ -70,6 +71,18 @@ class MerekResource extends Resource
     {
         return [
             'index' => Pages\ManageMereks::route('/'),
+        ];
+    }
+
+    public static function getPermissionPrefixes(): array
+    {
+        return [
+            'view',
+            'view_any',
+            'create',
+            'update',
+            'delete',
+            'delete_any',
         ];
     }
 }
