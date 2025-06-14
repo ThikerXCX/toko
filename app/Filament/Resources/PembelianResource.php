@@ -3,22 +3,17 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\PembelianResource\Pages;
-use App\Filament\Resources\PembelianResource\RelationManagers;
 use App\Models\Pembelian;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-
 
 class PembelianResource extends Resource implements HasShieldPermissions
 {
@@ -30,13 +25,13 @@ class PembelianResource extends Resource implements HasShieldPermissions
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\TextInput::make('no_faktur')
+            TextInput::make('no_faktur')
                 ->required()
                 ->maxLength(50)
                 ->unique(ignoreRecord: true)
                 ->label('No. Faktur'),
-                
-            Forms\Components\Select::make('supplier_id')
+
+            Select::make('supplier_id')
                 ->relationship('supplier', 'name')
                 ->required()
                 ->searchable()
@@ -46,13 +41,13 @@ class PembelianResource extends Resource implements HasShieldPermissions
                 ->required()
                 ->default(now()),
 
-            Forms\Components\TextInput::make('total')
+            TextInput::make('total')
                 ->numeric()
                 ->readOnly()
                 ->label('Total')
                 ->default(0),
 
-            Forms\Components\Repeater::make('details')
+            Repeater::make('details')
                 ->relationship()
                 ->schema([
                     Select::make('product_id')
@@ -64,18 +59,14 @@ class PembelianResource extends Resource implements HasShieldPermissions
                         ->afterStateUpdated(function ($state, callable $set, callable $get) {
                             if ($state) {
                                 $hargaBeli = \App\Models\Product::find($state)?->harga_beli ?? 0;
-                                $qty = 1;
                                 $set('harga', $hargaBeli);
-                                $set('qty', $qty);
-                                $set('subtotal', $hargaBeli * $qty);
+                                $set('qty', 1);
+                                $set('subtotal', $hargaBeli * 1);
 
-                                // Ambil details lama
-                                $details = $get('details') ?? [];
-                                // Hitung total dari details lama
+                                // Update total di parent
+                                $details = $get('../../details') ?? [];
                                 $total = collect($details)->sum(fn ($item) => ($item['harga'] ?? 0) * ($item['qty'] ?? 0));
-                                // Tambahkan subtotal dari item yang baru dipilih (karena belum masuk ke details)
-                                $total += $hargaBeli * $qty;
-                                $set('total', $total);
+                                $set('../../total', $total);
                             }
                         }),
 
@@ -83,38 +74,48 @@ class PembelianResource extends Resource implements HasShieldPermissions
                         ->numeric()
                         ->required()
                         ->label('Harga')
-                        ->debounce(500)
+                        ->lazy()
                         ->afterStateUpdated(function ($state, callable $set, callable $get) {
                             $qty = $get('qty') ?? 0;
                             $set('subtotal', (int)$state * (int)$qty);
-                    }),
 
-            TextInput::make('qty')
-                ->numeric()
-                ->required()
-                ->default(1)
-                ->label('Qty')
-                ->debounce(500)
-                ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                    $harga = $get('harga') ?? 0;
-                    $set('subtotal', (int)$harga * (int)$state);
-                }),
+                            // Update total di parent
+                            $details = $get('../../details') ?? [];
+                            $total = collect($details)->sum(fn ($item) => ($item['harga'] ?? 0) * ($item['qty'] ?? 0));
+                            $set('../../total', $total);
+                        }),
+
+                    TextInput::make('qty')
+                        ->numeric()
+                        ->required()
+                        ->default(1)
+                        ->label('Qty')
+                        ->lazy()
+                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                            $harga = $get('harga') ?? 0;
+                            $set('subtotal', (int)$harga * (int)$state);
+
+                            // Update total di parent
+                            $details = $get('../../details') ?? [];
+                            $total = collect($details)->sum(fn ($item) => ($item['harga'] ?? 0) * ($item['qty'] ?? 0));
+                            $set('../../total', $total);
+                        }),
 
                     TextInput::make('subtotal')
                         ->numeric()
                         ->readOnly()
                         ->label('Subtotal'),
-                        ])
-                        ->columns(2)
-                        ->required()
-                        ->reactive()
-                        ->afterStateUpdated(function (callable $set, callable $get) {
-                            $details = $get('details') ?? [];
-                            $total = collect($details)->sum(fn ($item) => ($item['harga'] ?? 0) * ($item['qty'] ?? 0));
-                            $set('total', $total);
-                        })->columnSpanFull(),
-                    
-                    ]);
+                ])
+                ->columns(2)
+                ->required()
+                ->reactive()
+                ->afterStateUpdated(function (callable $set, callable $get) {
+                    $details = $get('details') ?? [];
+                    $total = collect($details)->sum(fn ($item) => ($item['harga'] ?? 0) * ($item['qty'] ?? 0));
+                    $set('total', $total);
+                })
+                ->columnSpanFull(),
+        ]);
     }
 
     public static function table(Table $table): Table
@@ -167,6 +168,5 @@ class PembelianResource extends Resource implements HasShieldPermissions
             'delete',
             'delete_any',
         ];
-
     }
 }
