@@ -16,4 +16,8 @@ class ManageSatuans extends ManageRecords
             Actions\CreateAction::make(),
         ];
     }
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
 }

@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\PembelianResource\Pages;
-use App\Models\Pembelian;
-use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
+use App\Filament\Resources\PenjualanResource\Pages;
+use App\Filament\Resources\PenjualanResource\RelationManagers;
+use App\Models\Penjualan;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
@@ -13,63 +13,56 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Illuminate\Database\Eloquent\Builder;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class PembelianResource extends Resource implements HasShieldPermissions
+class PenjualanResource extends Resource
 {
-    protected static ?string $model = Pembelian::class;
-    protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
-    protected static ?string $navigationLabel = 'Pembelian';
+    protected static ?string $model = Penjualan::class;
     protected static ?string $navigationGroup = 'Transaksi';
+    protected static ?string $navigationLabel = 'Penjualan';
 
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()->with(['supplier', 'details.product']);
-    }
+    protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
+
 
     public static function form(Form $form): Form
     {
+        function updateTotal(callable $set, callable $get): void {
+            $details = $get('details') ?? [];
+            $total = collect($details)->sum(fn($d) => ($d['harga'] ?? 0) * ($d['qty'] ?? 0));
+            $set('total', $total);
+        }
         return $form->schema([
-            TextInput::make('no_faktur')
-                ->required()
-                ->maxLength(50)
-                ->unique(ignoreRecord: true)
-                ->label('No. Faktur'),
-
-            Select::make('supplier_id')
-                ->relationship('supplier', 'name')
-                ->required()
-                ->searchable()
-                ->label('Supplier'),
-
             DatePicker::make('tanggal')
-                ->required()
+                ->label('Tanggal')
+                ->readOnly()
                 ->default(now()),
 
             TextInput::make('total')
                 ->numeric()
                 ->readOnly()
-                ->label('Total')
                 ->default(0),
 
             Repeater::make('details')
                 ->relationship()
+                ->label('Detail Penjualan')
                 ->schema([
                     Select::make('product_id')
+                        ->label('Produk')
                         ->relationship('product', 'name')
                         ->required()
                         ->searchable()
-                        ->label('Produk')
                         ->reactive()
                         ->afterStateUpdated(function ($state, callable $set, callable $get) {
                             if ($state) {
-                                $hargaBeli = \App\Models\Product::find($state)?->harga_beli ?? 0;
-                                $set('harga', $hargaBeli);
+                                $hargaJual = \App\Models\Product::find($state)?->harga_jual ?? 0;
+                                $set('harga', $hargaJual);
                                 $set('qty', 1);
-                                $set('subtotal', $hargaBeli * 1);
+                                $set('subtotal', $hargaJual * 1);
 
-                                // Update total di parent
+                                // Cukup hitung total dari details, JANGAN tambah manual subtotal baris ini
                                 $details = $get('../../details') ?? [];
                                 $total = collect($details)->sum(fn ($item) => ($item['harga'] ?? 0) * ($item['qty'] ?? 0));
                                 $set('../../total', $total);
@@ -115,6 +108,7 @@ class PembelianResource extends Resource implements HasShieldPermissions
                 ->columns(2)
                 ->required()
                 ->reactive()
+                // Optional: tetap tambahkan afterStateUpdated di repeater untuk sync jika ada tambah/hapus baris
                 ->afterStateUpdated(function (callable $set, callable $get) {
                     $details = $get('details') ?? [];
                     $total = collect($details)->sum(fn ($item) => ($item['harga'] ?? 0) * ($item['qty'] ?? 0));
@@ -128,23 +122,36 @@ class PembelianResource extends Resource implements HasShieldPermissions
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('no_faktur')->searchable(),
-                Tables\Columns\TextColumn::make('supplier.name')->label('Supplier'),
-                Tables\Columns\TextColumn::make('tanggal')->date(),
-                Tables\Columns\TextColumn::make('total')->money('IDR'),
+                TextColumn::make('kode')
+                    ->label('Kode Penjualan')
+                    ->sortable()
+                    ->searchable(),
+                TextColumn::make('user.name')
+                    ->label('Dilayani Oleh')
+                    ->sortable()
+                    ->searchable(),
+                TextColumn::make('tanggal')
+                    ->label('Tanggal')
+                    ->date()
+                    ->sortable()
+                    ->searchable(),
+                TextColumn::make('total')
+                    ->label('Total')
+                    ->money('idr')
+                    ->sortable()
+                    ->searchable(),
+                
             ])
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                // Tables\Actions\BulkActionGroup::make([
+                //     Tables\Actions\DeleteBulkAction::make(),
+                // ]),
             ]);
     }
 
@@ -158,22 +165,14 @@ class PembelianResource extends Resource implements HasShieldPermissions
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPembelians::route('/'),
-            'create' => Pages\CreatePembelian::route('/create'),
-            'edit' => Pages\EditPembelian::route('/{record}/edit'),
+            'index' => Pages\ListPenjualans::route('/'),
+            'create' => Pages\CreatePenjualan::route('/create'),
+            'edit' => Pages\EditPenjualan::route('/{record}/edit'),
         ];
     }
 
-    public static function getPermissionPrefixes(): array
+    public static function getEloquentQuery(): Builder
     {
-        return [
-            'view',
-            'view_any',
-            'create',
-            'update',
-            'delete',
-            'delete_any',
-        ];
+        return parent::getEloquentQuery()->with(['user', 'details.product']);
     }
-    
 }

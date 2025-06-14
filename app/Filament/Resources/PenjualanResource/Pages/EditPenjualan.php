@@ -1,20 +1,20 @@
 <?php
 
-namespace App\Filament\Resources\PembelianResource\Pages;
+namespace App\Filament\Resources\PenjualanResource\Pages;
 
-use App\Filament\Resources\PembelianResource;
+use App\Filament\Resources\PenjualanResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-class EditPembelian extends EditRecord
+class EditPenjualan extends EditRecord
 {
-    protected static string $resource = PembelianResource::class;
+    protected static string $resource = PenjualanResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
             Actions\DeleteAction::make()
-                ->before(function (Actions\DeleteAction $action) {
+            ->before(function (Actions\DeleteAction $action) {
                     foreach ($this->record->details as $detail) {
                         $product = $detail->product;
                         $product->stok -= $detail->qty;
@@ -24,22 +24,24 @@ class EditPembelian extends EditRecord
         ];
     }
 
-    protected function beforeSave(): void
+    protected function mutateFormDataBeforeSave(array $data): array
     {
-        // Kembalikan stok lama sebelum diubah
+        // Kurangi stok lama sebelum update
         foreach ($this->record->details as $detail) {
             $product = $detail->product;
-            $product->stok -= $detail->qty; // kurangi stok sebelumnya
+            $product->stok += $detail->qty; // Balikkan stok (karena akan diganti)
             $product->save();
         }
+
+        return $data;
     }
 
     protected function afterSave(): void
     {
-        // Tambahkan stok baru
+        // Kurangi stok sesuai detail baru
         foreach ($this->record->details as $detail) {
             $product = $detail->product;
-            $product->stok += $detail->qty;
+            $product->stok -= $detail->qty;
             $product->save();
         }
     }
@@ -47,6 +49,4 @@ class EditPembelian extends EditRecord
     {
         return static::getResource()::getUrl('index');
     }
-    
-
 }
