@@ -18,6 +18,7 @@ use Filament\Tables;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -36,7 +37,7 @@ class ProductResource extends Resource implements HasShieldPermissions
                         ->required()
                         ->maxLength(50)
                         ->lazy()
-                        ->afterStateUpdated(fn ($state, callable $set) => $set('slug', \Str::slug($state))),
+                        ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state))),
 
                     TextInput::make('sku')
                         ->label('SKU')
