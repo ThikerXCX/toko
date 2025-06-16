@@ -12,6 +12,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -89,11 +90,27 @@ class PenjualanResource extends Resource implements HasShieldPermissions
                         ->numeric()
                         ->required()
                         ->default(1)
-                        ->label('Qty')
+                        ->label('Jumlah')
                         ->lazy()
+                        ->maxValue(fn (callable $get) => \App\Models\Product::find($get('product_id'))?->stok ?? null)
                         ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                            $productId = $get('product_id');
+                            $stok = \App\Models\Product::find($productId)?->stok ?? null;
+                            $qty = (int)$state;
+
+                            if ($stok !== null && $qty > $stok) {
+                                $qty = $stok;
+                                $set('qty', $qty);
+
+                                Notification::make()
+                                    ->title('Jumlah melebihi stok!')
+                                    ->body('Jumlah otomatis diubah ke stok maksimal: ' . $stok)
+                                    ->danger()
+                                    ->send();
+                            }
+
                             $harga = $get('harga') ?? 0;
-                            $set('subtotal', (int)$harga * (int)$state);
+                            $set('subtotal', (int)$harga * $qty);
 
                             // Update total di parent
                             $details = $get('../../details') ?? [];
