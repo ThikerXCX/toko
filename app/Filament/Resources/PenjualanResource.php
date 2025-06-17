@@ -6,6 +6,7 @@ use App\Filament\Resources\PenjualanResource\Pages;
 use App\Filament\Resources\PenjualanResource\RelationManagers;
 use App\Models\Penjualan;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
+use Filament\Tables\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
@@ -164,6 +165,12 @@ class PenjualanResource extends Resource implements HasShieldPermissions
                 //
             ])
             ->actions([
+                Action::make('print')
+                ->label('Cetak')
+                ->url(fn (Penjualan $record) => route('penjualan.cetak', $record))
+                ->openUrlInNewTab()
+                ->icon('heroicon-o-printer'),
+
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
