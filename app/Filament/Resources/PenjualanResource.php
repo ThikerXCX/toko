@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PenjualanResource\Pages;
 use App\Filament\Resources\PenjualanResource\RelationManagers;
 use App\Models\Penjualan;
+use App\Traits\FilamentPermissionAwareNavigation;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Tables\Actions\Action;
 use Filament\Forms;
@@ -23,6 +24,12 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class PenjualanResource extends Resource implements HasShieldPermissions
 {
+    use FilamentPermissionAwareNavigation;
+    protected static string $requiredPermission = 'view_penjualan';
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccessMenu(); // Panggil method yang sudah aman
+    }
     protected static ?string $model = Penjualan::class;
     protected static ?string $navigationGroup = 'Transaksi';
     protected static ?string $navigationLabel = 'Penjualan';
@@ -52,25 +59,53 @@ class PenjualanResource extends Resource implements HasShieldPermissions
                 ->relationship()
                 ->label('Detail Penjualan')
                 ->schema([
-                    Select::make('product_id')
-                        ->label('Produk')
-                        ->relationship('product', 'name')
-                        ->required()
-                        ->searchable()
-                        ->reactive()
-                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                            if ($state) {
-                                $hargaJual = \App\Models\Product::find($state)?->harga_jual ?? 0;
-                                $set('harga', $hargaJual);
-                                $set('qty', 1);
-                                $set('subtotal', $hargaJual * 1);
+                    // Select::make('product_id')
+                    //     ->label('Produk')
+                    //     ->relationship('product', 'name')
+                    //     ->required()
+                    //     ->searchable()
+                    //     ->reactive()
+                    //     ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                    //         if ($state) {
+                    //             $hargaJual = \App\Models\Product::find($state)?->harga_jual ?? 0;
+                    //             $set('harga', $hargaJual);
+                    //             $set('qty', 1);
+                    //             $set('subtotal', $hargaJual * 1);
 
-                                // Cukup hitung total dari details, JANGAN tambah manual subtotal baris ini
-                                $details = $get('../../details') ?? [];
-                                $total = collect($details)->sum(fn ($item) => ($item['harga'] ?? 0) * ($item['qty'] ?? 0));
-                                $set('../../total', $total);
-                            }
-                        }),
+                    //             // Cukup hitung total dari details, JANGAN tambah manual subtotal baris ini
+                    //             $details = $get('../../details') ?? [];
+                    //             $total = collect($details)->sum(fn ($item) => ($item['harga'] ?? 0) * ($item['qty'] ?? 0));
+                    //             $set('../../total', $total);
+                    //         }
+                    //     }),
+
+                    Select::make('product_id')
+                    ->label('Produk')
+                    ->required()
+                    ->searchable()
+                    ->options(function (callable $get) {
+                        $selectedProducts = collect($get('../../details'))
+                            ->pluck('product_id')
+                            ->filter()
+                            ->toArray();
+
+                        return \App\Models\Product::query()
+                            ->when($selectedProducts, fn ($query) => $query->whereNotIn('id', $selectedProducts))
+                            ->pluck('name', 'id');
+                    })
+                    ->reactive()
+                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                        if ($state) {
+                            $hargaJual = \App\Models\Product::find($state)?->harga_jual ?? 0;
+                            $set('harga', $hargaJual);
+                            $set('qty', 1);
+                            $set('subtotal', $hargaJual * 1);
+
+                            $details = $get('../../details') ?? [];
+                            $total = collect($details)->sum(fn ($item) => ($item['harga'] ?? 0) * ($item['qty'] ?? 0));
+                            $set('../../total', $total);
+                        }
+                    }),
 
                     TextInput::make('harga')
                         ->numeric()

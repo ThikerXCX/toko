@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Pembelian;
 use App\Models\Penjualan;
+use App\Traits\FilamentPermissionAwareNavigation;
 use Filament\Pages\Page;
 use Filament\Forms\Form;
 use Filament\Forms\Components\Select;
@@ -12,7 +13,26 @@ use Illuminate\Support\Collection;
 
 class Laporan extends Page 
 {
+    use FilamentPermissionAwareNavigation;
+    protected static string $requiredPermission = 'page_laporan';
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccessMenu(); // Panggil method yang sudah aman
+    }
     
+    public static function canView(): bool
+    {
+        $user = auth()->user();
+
+        if (!$user) return false;
+
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+        return false;
+    }
+
+
 
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
     protected static ?string $navigationLabel = 'Laporan';

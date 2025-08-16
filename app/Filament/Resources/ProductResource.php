@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Resources\ProductResource\RelationManagers;
 use App\Models\Product;
+use App\Traits\FilamentPermissionAwareNavigation;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Dom\Text;
 use Filament\Forms;
@@ -25,6 +26,12 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class ProductResource extends Resource implements HasShieldPermissions
 {
     protected static ?string $model = Product::class;
+    use FilamentPermissionAwareNavigation;
+    protected static string $requiredPermission = 'view_product';
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccessMenu(); // Panggil method yang sudah aman
+    }
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 

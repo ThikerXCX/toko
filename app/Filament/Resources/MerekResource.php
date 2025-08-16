@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\MerekResource\Pages;
 use App\Filament\Resources\MerekResource\RelationManagers;
 use App\Models\Merek;
+use App\Traits\FilamentPermissionAwareNavigation;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -17,7 +18,12 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class MerekResource extends Resource implements HasShieldPermissions
 {
     protected static ?string $model = Merek::class;
-
+    use FilamentPermissionAwareNavigation;
+    protected static string $requiredPermission = 'view_merek';
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccessMenu(); // Panggil method yang sudah aman
+    }
     protected static ?string $navigationIcon = 'heroicon-c-tag';
     protected static ?string $navigationLabel = 'Merek';
     protected static ?string $navigationGroup = 'Master';

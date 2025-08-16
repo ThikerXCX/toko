@@ -5,8 +5,11 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\SupplierResource\Pages;
 use App\Filament\Resources\SupplierResource\RelationManagers;
 use App\Models\Supplier;
+use App\Traits\FilamentPermissionAwareNavigation;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Forms;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -14,10 +17,16 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
+
 class SupplierResource extends Resource implements HasShieldPermissions
 {
+    use FilamentPermissionAwareNavigation;
+    protected static string $requiredPermission = 'view_supplier';
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccessMenu(); // Panggil method yang sudah aman
+    }
     protected static ?string $model = Supplier::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
     protected static ?string $navigationGroup = 'Master';
@@ -26,14 +35,14 @@ class SupplierResource extends Resource implements HasShieldPermissions
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
+                TextInput::make('name')
                     ->required()
                     ->maxLength(30)
                     ->unique(ignoreRecord: true),
-                Forms\Components\TextInput::make('no_tlp')
+                TextInput::make('no_tlp')
                     ->maxLength(15)
                     ->default('-'),
-                Forms\Components\TextArea::make('alamat')
+                Textarea::make('alamat')
                     ->maxLength(50)
                     ->default('-')
                     ->columnSpanFull(),

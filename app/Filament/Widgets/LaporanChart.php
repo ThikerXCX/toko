@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Pembelian;
 use App\Models\Penjualan;
+use App\Traits\FilamentPermissionAwareWidget;
 use Filament\Widgets\ChartWidget;
 
 class LaporanChart extends ChartWidget
@@ -11,6 +12,18 @@ class LaporanChart extends ChartWidget
     // protected static ?string $heading = 'Chart';
     protected static ?string $heading = 'Grafik Transaksi Bulanan';
     protected static string $color = 'primary';
+
+    public static function canView(): bool
+    {
+        $user = auth()->user();
+
+        if (!$user) return false;
+
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+        return false;
+    }
 
     protected function getData(): array
     {

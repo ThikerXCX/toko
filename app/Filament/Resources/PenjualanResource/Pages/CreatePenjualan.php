@@ -12,14 +12,36 @@ class CreatePenjualan extends CreateRecord
     protected static string $resource = PenjualanResource::class;
 
     protected function mutateFormDataBeforeCreate(array $data): array
-    {
-        $tanggal = \Carbon\Carbon::parse($data['tanggal'])->format('dmy'); // contoh: 140625
-        $random = str_pad(random_int(0, 999), 5, '0', STR_PAD_LEFT);       // contoh: 034
-        $data['kode'] = 'CT-' . $tanggal . '-' . $random;
-
-        $data['user_id'] = Auth::id(); // Ambil ID user yang login
-        return $data;
+{
+    // Cek produk duplikat
+    $productIds = collect($data['details'])->pluck('product_id');
+    if ($productIds->duplicates()->isNotEmpty()) {
+        throw \Illuminate\Validation\ValidationException::withMessages([
+            'details' => 'Terdapat produk yang dipilih lebih dari satu kali.',
+        ]);
     }
+
+    // Kode otomatis
+    $tanggal = \Carbon\Carbon::parse($data['tanggal'])->format('dmy'); // contoh: 140625
+    $random = str_pad(random_int(0, 999), 5, '0', STR_PAD_LEFT);       // contoh: 034
+    $data['kode'] = 'CT-' . $tanggal . '-' . $random;
+
+    // Tambahkan ID user yang login
+    $data['user_id'] = Auth::id();
+
+    return $data;
+}
+
+
+    // protected function mutateFormDataBeforeCreate(array $data): array
+    // {
+    //     $tanggal = \Carbon\Carbon::parse($data['tanggal'])->format('dmy'); // contoh: 140625
+    //     $random = str_pad(random_int(0, 999), 5, '0', STR_PAD_LEFT);       // contoh: 034
+    //     $data['kode'] = 'CT-' . $tanggal . '-' . $random;
+
+    //     $data['user_id'] = Auth::id(); // Ambil ID user yang login
+    //     return $data;
+    // }
 
     protected function afterCreate(): void
     {

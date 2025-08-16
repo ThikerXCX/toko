@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use BezhanSalleh\FilamentShield\Forms\ShieldSelectAllToggle;
 use App\Filament\Resources\RoleResource\Pages;
+use App\Traits\FilamentPermissionAwareNavigation;
 use BezhanSalleh\FilamentShield\Support\Utils;
 use BezhanSalleh\FilamentShield\Traits\HasShieldFormComponents;
 use Filament\Facades\Filament;
@@ -22,7 +23,7 @@ use Illuminate\Validation\Rules\Unique;
 class RoleResource extends Resource implements HasShieldPermissions
 {
     use HasShieldFormComponents;
-
+    
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function getPermissionPrefixes(): array

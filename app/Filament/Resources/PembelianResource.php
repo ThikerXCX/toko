@@ -4,11 +4,13 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PembelianResource\Pages;
 use App\Models\Pembelian;
+use App\Traits\FilamentPermissionAwareNavigation;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -18,6 +20,12 @@ use Filament\Tables\Table;
 
 class PembelianResource extends Resource implements HasShieldPermissions
 {
+    use FilamentPermissionAwareNavigation;
+    protected static string $requiredPermission = 'view_pembelian';
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccessMenu(); // Panggil method yang sudah aman
+    }
     protected static ?string $model = Pembelian::class;
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
     protected static ?string $navigationLabel = 'Pembelian';
@@ -41,7 +49,20 @@ class PembelianResource extends Resource implements HasShieldPermissions
                 ->relationship('supplier', 'name')
                 ->required()
                 ->searchable()
-                ->label('Supplier'),
+                ->label('Supplier')
+                ->createOptionForm([
+                    TextInput::make('name')
+                    ->required()
+                    ->maxLength(30)
+                    ->unique(ignoreRecord: true),
+                    TextInput::make('no_tlp')
+                        ->maxLength(15)
+                        ->default('-'),
+                    Textarea::make('alamat')
+                        ->maxLength(50)
+                        ->default('-')
+                        ->columnSpanFull(),
+                ]),
 
             DatePicker::make('tanggal')
                 ->required()

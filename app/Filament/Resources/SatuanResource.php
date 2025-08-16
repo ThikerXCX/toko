@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\SatuanResource\Pages;
 use App\Filament\Resources\SatuanResource\RelationManagers;
 use App\Models\Satuan;
+use App\Traits\FilamentPermissionAwareNavigation;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -16,6 +17,13 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SatuanResource extends Resource implements HasShieldPermissions
 {
+    use FilamentPermissionAwareNavigation;
+    protected static string $requiredPermission = 'view_satuan';
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccessMenu(); // Panggil method yang sudah aman
+    }
+
     protected static ?string $model = Satuan::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
